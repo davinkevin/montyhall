@@ -1,7 +1,6 @@
 package com.githuib.davinkevin.montyhall;
 
 
-import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import lombok.extern.java.Log;
 
@@ -20,41 +19,20 @@ public class Experimentation {
         this.doors = generateDoors(numberOfDoors);
     }
 
-    Boolean playerHasWinAtFirstTry() {
-        Integer choice = randomChoice(doors.size());
-        return doors.get(choice).has(Price.CAR);
-    }
-
     Boolean playerHasWinAfterRemove(Boolean isChanging) {
-        Door firstDoorChoice = this.doors.get(randomChoice(doors.size()));
+        Door firstDoorChoice = randomChoiceIn(doors);
 
-        List<Tuple2<Door, Integer>> presentatorPossibilities = doors
-                .zipWithIndex()
-                .filter(v -> !v._1().equals(firstDoorChoice))
-                .filter(v -> v._1().has(Price.NOTHING))
-                ;
+        Door presentatorChoice = firstDoorChoice.has(Price.CAR)
+                ? randomChoiceIn(doors.filter(v -> !v.equals(firstDoorChoice)))
+                : doors.filter(v -> v.has(Price.CAR)).get();
 
-        Door presentatorChoice = presentatorPossibilities
-                .get(randomChoice(presentatorPossibilities.size()))
-                ._1();
-
-        List<Door> doorsAfterPresentatorModification = this.doors
-                .filter(v -> !v.equals(presentatorChoice));
-
-        Door finalChoice;
-        if (isChanging) {
-            finalChoice = doorsAfterPresentatorModification
-                    .filter(v -> !v.equals(firstDoorChoice))
-                    .head();
-        } else {
-            finalChoice = firstDoorChoice;
-        }
+        Door finalChoice = isChanging ? presentatorChoice : firstDoorChoice;
 
         return finalChoice.has(Price.CAR);
     }
 
-    private Integer randomChoice(Integer maxChoice) {
-        return seed.nextInt(maxChoice);
+    private Door randomChoiceIn(List<Door> list) {
+        return list.get(seed.nextInt(list.size()));
     }
 
     private static List<Door> generateDoors(Integer number) {
