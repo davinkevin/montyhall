@@ -2,11 +2,12 @@ package com.githuib.davinkevin.montyhall;
 
 
 import io.vavr.collection.List;
+import io.vavr.collection.Stream;
 import lombok.extern.java.Log;
 
 import java.util.Random;
-import java.util.function.Function;
-import java.util.stream.IntStream;
+
+import static com.githuib.davinkevin.montyhall.Experimentation.ExperimentationResult.*;
 
 @Log
 public class Experimentation {
@@ -19,16 +20,27 @@ public class Experimentation {
         this.doors = generateDoors(numberOfDoors);
     }
 
-    Boolean playerHasWinAfterRemove(Boolean isChanging) {
+    ExperimentationResult playerHasWinAfterRemoveAndRandomPresentator() {
+        Door firstDoorChoice = randomChoiceIn(doors);
+        Door presentatorChoice = randomChoiceIn(doors.remove(firstDoorChoice));
+
+        if (presentatorChoice.has(Price.CAR)) {
+            return GAME_ABORTED;
+        }
+
+        return firstDoorChoice.has(Price.CAR) ? PLAYER_WINS : PLAYER_LOOSE;
+    }
+
+    ExperimentationResult playerHasWinAfterRemoveAndOmniscientPresentator(Boolean isChanging) {
         Door firstDoorChoice = randomChoiceIn(doors);
 
         Door presentatorChoice = firstDoorChoice.has(Price.CAR)
-                ? randomChoiceIn(doors.filter(v -> !v.equals(firstDoorChoice)))
+                ? randomChoiceIn(doors.remove(firstDoorChoice))
                 : doors.filter(v -> v.has(Price.CAR)).get();
 
         Door finalChoice = isChanging ? presentatorChoice : firstDoorChoice;
 
-        return finalChoice.has(Price.CAR);
+        return finalChoice.has(Price.CAR) ? PLAYER_WINS : PLAYER_LOOSE;
     }
 
     private Door randomChoiceIn(List<Door> list) {
@@ -36,17 +48,15 @@ public class Experimentation {
     }
 
     private static List<Door> generateDoors(Integer number) {
-        final Random random = new Random();
-
-        Integer positionOfPrice = random.nextInt(number);
-
-        return IntStream.range(0, number-1)
-                .mapToObj(i -> new Door(Price.NOTHING))
-                .collect(List.collector())
-                .insert(positionOfPrice, new Door(Price.CAR));
+        return Stream.from(0)
+                .take(number-1)
+                .map(i -> Door.with(Price.NOTHING))
+                .toList()
+                .push(Door.with(Price.CAR))
+                .shuffle();
     }
 
-    private static Function<Boolean, Price> toPrice() {
-        return b -> b ? Price.CAR : Price.NOTHING;
+    public enum ExperimentationResult {
+        PLAYER_WINS, PLAYER_LOOSE, GAME_ABORTED;
     }
 }
