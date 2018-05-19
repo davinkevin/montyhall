@@ -6,8 +6,9 @@ import io.vavr.collection.List;
 import lombok.extern.java.Log;
 
 import java.util.Random;
-import java.util.function.Function;
 import java.util.stream.IntStream;
+
+import static com.githuib.davinkevin.montyhall.Experimentation.ExperimentationResult.*;
 
 @Log
 public class Experimentation {
@@ -20,23 +21,21 @@ public class Experimentation {
         this.doors = generateDoors(numberOfDoors);
     }
 
-    Boolean playerHasWinAtFirstTry() {
-        Integer choice = randomChoice(doors.size());
-        return doors.get(choice).has(Price.CAR);
-    }
-
-    Boolean playerHasWinAfterRemove(Boolean isChanging) {
+    ExperimentationResult playerHasWinAfterRemove(Boolean isChanging) {
         Door firstDoorChoice = this.doors.get(randomChoice(doors.size()));
 
         List<Tuple2<Door, Integer>> presentatorPossibilities = doors
                 .zipWithIndex()
                 .filter(v -> !v._1().equals(firstDoorChoice))
-                .filter(v -> v._1().has(Price.NOTHING))
                 ;
 
         Door presentatorChoice = presentatorPossibilities
                 .get(randomChoice(presentatorPossibilities.size()))
                 ._1();
+
+        if (presentatorChoice.has(Price.CAR)) {
+            return GAME_ABORTED;
+        }
 
         List<Door> doorsAfterPresentatorModification = this.doors
                 .filter(v -> !v.equals(presentatorChoice));
@@ -50,7 +49,7 @@ public class Experimentation {
             finalChoice = firstDoorChoice;
         }
 
-        return finalChoice.has(Price.CAR);
+        return finalChoice.has(Price.CAR) ? PLAYER_WINS : PLAYER_LOOSE;
     }
 
     private Integer randomChoice(Integer maxChoice) {
@@ -68,7 +67,7 @@ public class Experimentation {
                 .insert(positionOfPrice, new Door(Price.CAR));
     }
 
-    private static Function<Boolean, Price> toPrice() {
-        return b -> b ? Price.CAR : Price.NOTHING;
+    public enum ExperimentationResult {
+        PLAYER_WINS, PLAYER_LOOSE, GAME_ABORTED;
     }
 }

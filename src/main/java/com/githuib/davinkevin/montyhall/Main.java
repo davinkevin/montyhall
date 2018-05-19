@@ -1,12 +1,17 @@
 package com.githuib.davinkevin.montyhall;
 
-import io.vavr.Tuple2;
+import com.githuib.davinkevin.montyhall.Experimentation.ExperimentationResult;
 import io.vavr.collection.List;
+import io.vavr.collection.Map;
 
 import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static com.githuib.davinkevin.montyhall.Experimentation.ExperimentationResult.GAME_ABORTED;
+import static com.githuib.davinkevin.montyhall.Experimentation.ExperimentationResult.PLAYER_LOOSE;
+import static com.githuib.davinkevin.montyhall.Experimentation.ExperimentationResult.PLAYER_WINS;
 
 public class Main {
 
@@ -21,15 +26,18 @@ public class Main {
                 .range(0, numberOfExperimentation)
                 .mapToObj(i -> new Experimentation(numberOfDoors, seed));
 
-        Tuple2<List<Boolean>, List<Boolean>> repartitionAfterSecondTry = experimentations
+        Map<ExperimentationResult, List<ExperimentationResult>> repartition = experimentations
                 .map(e -> e.playerHasWinAfterRemove(true))
                 .collect(List.collector())
-                .partition(v -> v);
+                .groupBy(v -> v);
 
-        Integer totalWin = asPercentage.apply(repartitionAfterSecondTry._1().size());
-        Integer totalError = asPercentage.apply(repartitionAfterSecondTry._2().size());
+        Integer totalWin = asPercentage.apply(repartition.get(PLAYER_WINS).get().size());
+        Integer totalLoose = asPercentage.apply(repartition.get(PLAYER_LOOSE).get().size());
+        Integer totalAborted = asPercentage.apply(repartition.get(GAME_ABORTED).get().size());
+
         System.out.println("Has win " + totalWin + "%");
-        System.out.println("Has loose " + totalError + "%");
+        System.out.println("Has loose " + totalLoose + "%");
+        System.out.println("Has aborted " + totalAborted + "%");
     }
 
     private static Function<Integer, Integer> withGlobal(Integer global) {
